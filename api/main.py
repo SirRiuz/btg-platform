@@ -64,7 +64,14 @@ async def lifespan(app: FastAPI):
 
 
 # Set up FastApi config
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Investment Funds Platform API",
+    description=(
+        "Subscribe to investment funds, cancel subscriptions, and receive "
+        "transactional notifications via email and SMS."
+    ),
+    lifespan=lifespan,
+)
 handler = Mangum(app)
 
 app.add_middleware(

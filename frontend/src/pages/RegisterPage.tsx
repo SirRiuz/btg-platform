@@ -180,7 +180,7 @@ export default function RegisterPage() {
               marginBottom: "40px",
             }}
           >
-            Comienza a invertir en fondos BTG Pactual.
+            Comienza a invertir en fondos de inversión.
           </Box>
 
           <Box

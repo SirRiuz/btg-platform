@@ -117,7 +117,7 @@ class Settings(BaseSettings):
         default=None,
         description=(
             "Token lifetime in minutes. ``None`` disables expiration "
-            "(intentional for the technical test)."
+            "(suitable for development; set an integer in production)."
         ),
     )
 
@@ -178,7 +178,7 @@ class Settings(BaseSettings):
     )
 
     sns_sender_id: str = Field(
-        default="BTGPactual",
+        default="FundsApp",
         max_length=11,
         pattern=r"^[A-Za-z0-9]+$",
         description=(

@@ -13,7 +13,7 @@ export function Wordmark({ to = "/", fixed = true }: WordmarkProps) {
     <Box
       component={RouterLink}
       to={to}
-      aria-label="BTG Pactual"
+      aria-label="Investment Funds Platform"
       sx={{
         position: fixed ? "absolute" : "static",
         top: fixed ? 40 : undefined,
@@ -41,7 +41,7 @@ export function Wordmark({ to = "/", fixed = true }: WordmarkProps) {
           backgroundColor: semantic.textPrimary,
         }}
       />
-      BTG Pactual
+      Funds Platform
     </Box>
   );
 }

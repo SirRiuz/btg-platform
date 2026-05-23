@@ -36,7 +36,7 @@ class TestSubscriptionConfirmedTemplate:
     def test_sms_body_fits_in_single_segment_for_typical_fund_names(self):
         """Single-segment SMS = single-segment billing.
 
-        Tested across the five mandatory fund names in the BTG brief.
+        Tested across the catalog of seeded fund names.
         """
         for fund_name in [
             "FPV_BTG_PACTUAL_RECAUDADORA",

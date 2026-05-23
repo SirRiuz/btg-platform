@@ -26,7 +26,7 @@ def _aws_settings(*, from_email="noreply@example.com", region="us-east-1"):
         notifications_provider="aws",
         aws_region=region,
         ses_from_email=from_email,
-        sns_sender_id="BTGPactual",
+        sns_sender_id="FundsApp",
     )
 
 
@@ -35,7 +35,7 @@ def _log_settings():
         notifications_provider="log",
         aws_region="us-east-1",
         ses_from_email=None,
-        sns_sender_id="BTGPactual",
+        sns_sender_id="FundsApp",
     )
 
 
@@ -57,7 +57,7 @@ def _sns_ok(*, in_sandbox: bool = False):
     client = MagicMock()
     client.get_sms_attributes.return_value = {
         "attributes": {
-            "DefaultSenderID": "BTGPactual",
+            "DefaultSenderID": "FundsApp",
             "MonthlySpendLimit": "1.00",
             "DefaultSMSType": "Transactional",
         }

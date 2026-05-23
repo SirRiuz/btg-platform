@@ -47,7 +47,7 @@ class TestDefaults:
         s = _build(monkeypatch)
         assert s.notifications_provider == "log"
         assert s.aws_region == "us-east-1"
-        assert s.sns_sender_id == "BTGPactual"
+        assert s.sns_sender_id == "FundsApp"
         assert s.phone_default_region == "CO"
 
     def test_jwt_expiration_minutes_empty_string_becomes_none(self, monkeypatch):

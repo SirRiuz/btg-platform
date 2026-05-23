@@ -1,8 +1,21 @@
-# BTG Pactual — Fondos de Inversión (Technical Test)
+# Investment Funds Platform — Backend
 
-FastAPI + MongoDB platform that lets a user subscribe to investment funds,
-cancel subscriptions, and receive transactional notifications by email
+FastAPI + MongoDB platform that lets users subscribe to investment funds,
+cancel subscriptions, and receive transactional notifications via email
 and SMS.
+
+## Features
+
+- JWT-based authentication (register, login, logout) with revocable tokens.
+- Fund catalog with subscription / cancellation flows and per-fund minimums.
+- Immutable transaction log — every balance change is auditable and the
+  current balance is reconcilable from the log.
+- Email + SMS notifications via AWS SES & SNS, opt-in per channel and
+  per user.
+- Money-conservation invariant (`balance + Σ open subscriptions ==
+  initial credit`) enforced atomically.
+- Idempotent migrations with auto-discovery.
+- Docker Compose for local dev, Lambda-ready for production.
 
 ## Quick start (local)
 
@@ -11,7 +24,7 @@ cp .env.template .env
 # Fill in the values — leave NOTIFICATIONS_PROVIDER=log for local dev.
 
 docker compose up -d --build
-make seed-funds          # seeds the 5 mandatory BTG funds
+make seed-funds          # seeds the catalog of investment funds
 ```
 
 The API is available at `http://localhost:8000`.
@@ -46,6 +59,34 @@ xdg-open api/htmlcov/index.html # Linux
 
 If you added or upgraded test deps in `api/requirements.txt`, rebuild
 the image first: `make build`.
+
+## Architecture
+
+The codebase favors clarity over cleverness. A few decisions worth
+calling out:
+
+- **Layered modules.** Each feature lives under `api/modules/<feature>/`
+  with `routes.py` (HTTP), `manager/` (business logic), `schemas.py`
+  (DTOs) and `tests/`. Cross-feature dependencies go through public
+  interfaces, never private internals.
+- **Ports and adapters for I/O.** Notifications expose an `EmailSender`
+  and `SmsSender` port (`modules/notifications/ports.py`) with
+  interchangeable adapters: AWS SES/SNS for production, a logging
+  adapter for local dev. Swapping providers is one settings flip.
+- **Immutable transaction log.** Subscribe and cancel each append an
+  event to a `transactions` collection. The user document carries the
+  current balance for fast reads, but the log is the source of truth —
+  any divergence is reconcilable by replay.
+- **Atomicity with fallback.** When the connected Mongo deployment is a
+  replica set, money-moving operations use real multi-document
+  transactions. Against a standalone `mongod` (the default dev compose),
+  the manager falls back to a documented compensation sequence that
+  upholds the invariant. The fallback is unit-tested.
+- **Fail-fast configuration.** Every runtime knob lives in
+  `api/core/settings.py` as a Pydantic `Settings` instance built at
+  import time. A misspelled region, a missing required credential, or
+  an invalid email at boot crashes the process — never at the first
+  request.
 
 ## Configuration
 
@@ -251,9 +292,9 @@ docker compose up -d --force-recreate api
 The startup log shows the effective config (without secrets):
 
 ```
-settings.loaded debug=True mongo_db=soptest notifications_enabled=True
+settings.loaded debug=True mongo_db=funds notifications_enabled=True
 notifications_provider=log aws_region=us-east-1 ses_from_email=...
-sns_sender_id=BTGPactual phone_default_region=CO is_running_in_lambda=False
+sns_sender_id=FundsApp phone_default_region=CO is_running_in_lambda=False
 ```
 
 ### Lambda (production)
@@ -264,7 +305,7 @@ Function environment variables:
 NOTIFICATIONS_PROVIDER=aws
 AWS_REGION=us-east-1
 SES_FROM_EMAIL=noreply@yourdomain.com
-SNS_SENDER_ID=BTGPactual
+SNS_SENDER_ID=YourBrand
 # No AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY — the IAM role provides them.
 ```
 
@@ -277,9 +318,16 @@ credential validator allowed the access-key env vars to be absent.
 
 | Improvement | Why not now |
 |---|---|
-| AWS Secrets Manager for credentials with periodic rotation | Tech test scope. Document for production. |
+| AWS Secrets Manager for credentials with periodic rotation | Future enhancement; documented for production use. |
 | AWS GuardDuty integration for credential-misuse alerts | Account-level setting; not a code change. |
-| Circuit breaker (pybreaker) on the AWS adapters | Useful at scale; the brief's volume is too low for the added complexity. |
+| Circuit breaker (pybreaker) on the AWS adapters | Useful at scale; current volume does not justify the complexity. |
 | Migrate from SNS to Amazon Pinpoint for multi-country campaigns | Larger refactor; advisable when the use case becomes campaign-driven. |
-| Idempotency-key header to dedupe retries | Requires Redis. Out of scope for the tech test. |
-| Outbox pattern with SQS + worker Lambda for guaranteed delivery | Current `BackgroundTasks` fire-and-forget is sufficient for the brief's load profile. |
+| Idempotency-key header to dedupe retries | Requires Redis. Out of scope for the current iteration. |
+| Outbox pattern with SQS + worker Lambda for guaranteed delivery | Current `BackgroundTasks` fire-and-forget is sufficient for the current load profile. |
+| Brand name as a configurable setting (`brand_name` in `Settings`) so email/SMS templates can be re-skinned per deploy without code edits | Templates currently hardcode the brand string; lifting it into settings is a one-PR change. |
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE).

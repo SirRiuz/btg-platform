@@ -33,7 +33,7 @@ class SubscriptionConfirmedTemplate:
             f"Amount subscribed: ${self.amount:,} COP.\n"
             f"Available balance: ${self.new_balance:,} COP.\n\n"
             "If you didn't request this transaction, contact support immediately.\n\n"
-            "— BTG Pactual"
+            "— Investment Funds Platform"
         )
 
     @property
@@ -50,13 +50,13 @@ class SubscriptionConfirmedTemplate:
             f"<li>Available balance: <strong>${self.new_balance:,} COP</strong></li>"
             "</ul>"
             "<p>If you didn't request this transaction, contact support immediately.</p>"
-            "<p>— BTG Pactual</p>"
+            "<p>— Investment Funds Platform</p>"
         )
 
     @property
     def sms_body(self) -> str:
         # Keep it tight: under 160 GSM-7 chars means single-segment billing.
         return (
-            f"BTG: Subscription to {self.fund_name} confirmed. "
+            f"Funds: Subscription to {self.fund_name} confirmed. "
             f"Amount: ${self.amount:,}. Balance: ${self.new_balance:,}."
         )

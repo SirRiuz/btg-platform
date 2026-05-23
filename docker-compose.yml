@@ -64,7 +64,7 @@ services:
       - NOTIFICATIONS_PROVIDER=${NOTIFICATIONS_PROVIDER:-log}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - SES_FROM_EMAIL=${SES_FROM_EMAIL:-}
-      - SNS_SENDER_ID=${SNS_SENDER_ID:-BTGPactual}
+      - SNS_SENDER_ID=${SNS_SENDER_ID:-FundsApp}
       - PHONE_DEFAULT_REGION=${PHONE_DEFAULT_REGION:-CO}
 
       # AWS credentials — only used when NOTIFICATIONS_PROVIDER=aws AND

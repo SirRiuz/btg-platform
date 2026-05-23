@@ -31,7 +31,7 @@ class SubscriptionCancelledTemplate:
             f"Refunded amount: ${self.amount:,} COP.\n"
             f"Available balance: ${self.new_balance:,} COP.\n\n"
             "If you didn't request this cancellation, contact support immediately.\n\n"
-            "— BTG Pactual"
+            "— Investment Funds Platform"
         )
 
     @property
@@ -45,12 +45,12 @@ class SubscriptionCancelledTemplate:
             f"<li>Available balance: <strong>${self.new_balance:,} COP</strong></li>"
             "</ul>"
             "<p>If you didn't request this cancellation, contact support immediately.</p>"
-            "<p>— BTG Pactual</p>"
+            "<p>— Investment Funds Platform</p>"
         )
 
     @property
     def sms_body(self) -> str:
         return (
-            f"BTG: Subscription to {self.fund_name} cancelled. "
+            f"Funds: Subscription to {self.fund_name} cancelled. "
             f"Refund: ${self.amount:,}. Balance: ${self.new_balance:,}."
         )
