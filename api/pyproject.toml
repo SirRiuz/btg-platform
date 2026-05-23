@@ -1,0 +1,38 @@
+[tool.pytest.ini_options]
+# Tests live alongside each module: api/modules/<feature>/tests, api/core/tests.
+# We let pytest auto-discover from the rootdir (which is /app in the container,
+# api/ on the host).
+testpaths = ["."]
+asyncio_mode = "auto"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--tb=short",
+]
+
+[tool.coverage.run]
+# Cover the production packages only — not the tests themselves, migrations,
+# or one-shot entry points.
+source = ["core", "modules"]
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "main.py",
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+show_missing = true
+skip_covered = false
+precision = 1

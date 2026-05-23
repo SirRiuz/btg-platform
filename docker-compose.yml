@@ -1,0 +1,127 @@
+version: "3.8"
+
+services:
+
+  frontend:
+    image: frontend-client
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ./frontend/:/app/
+      - /app/node_modules/
+    command: npm run dev
+    ports:
+      - "${FRONTEND_SERVER_PORT:-}:${FRONTEND_SERVER_PORT:-}"
+    expose:
+      - ${FRONTEND_SERVER_PORT:-}
+    depends_on:
+      - api
+    networks:
+      - soptest_net
+
+  api:
+    restart: always
+    command: fastapi dev main.py --host 0.0.0.0 --port ${SERVER_PORT:-}
+    container_name: soy_teo_api
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENTS_FILE: requirements.txt
+    environment:
+      # Project env config.
+      - DEBUG=${DEBUG:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ALLOWER_CORS_ORIGINS=${ALLOWER_CORS_ORIGINS:-}
+
+      # MongoDB connection.
+      # retryWrites=false because the local compose runs a standalone mongod —
+      # standalone rejects any write carrying a txnNumber (the marker pymongo
+      # adds when retryWrites=true), with IllegalOperation (code 20).
+      # On Atlas / a real replica set this query-string can be removed and the
+      # atomic_session helper will upgrade to real multi-document transactions.
+      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/${MONGO_DB_NAME}?authSource=admin&retryWrites=false
+      - MONGO_DB_NAME=${MONGO_DB_NAME}
+
+      # Auth — JWT.
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-}
+
+      # Auth — bcrypt.
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+
+      # Notifications.
+      - NOTIFICATIONS_ENABLED=${NOTIFICATIONS_ENABLED:-true}
+      - NOTIFICATIONS_PROVIDER=${NOTIFICATIONS_PROVIDER:-log}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - SES_FROM_EMAIL=${SES_FROM_EMAIL:-}
+      - SNS_SENDER_ID=${SNS_SENDER_ID:-BTGPactual}
+      - PHONE_DEFAULT_REGION=${PHONE_DEFAULT_REGION:-CO}
+
+      # AWS credentials — only used when NOTIFICATIONS_PROVIDER=aws AND
+      # running outside Lambda. In Lambda the execution role provides
+      # credentials and these are intentionally omitted.
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+
+      - PYTHONPATH=/app
+    volumes:
+      - ./api:/app:Z
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1 (not localhost) to skip IPv6 resolution — uvicorn binds IPv4 only.
+      # Plain GET (no --spider) because FastAPI returns 405 to the HEAD request --spider sends.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8000/healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    networks:
+      - soptest_net
+
+  mongo:
+    image: mongo:7
+    container_name: soy_teo_mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - soptest_net
+
+  nginx:
+    image: nginx_server
+    restart: always
+    build:
+      context: .
+      dockerfile: ./api/nginx/Dockerfile
+    ports:
+      - ${SERVER_PORT:-}:${SERVER_PORT:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - soptest_net
+
+networks:
+  soptest_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
