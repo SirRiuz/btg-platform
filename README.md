@@ -57,6 +57,38 @@ the first incoming request.
 
 See `.env.template` for the full list with placeholders and inline docs.
 
+### Server port
+
+The listen port has a single source of truth: `SERVER_PORT` in `.env`.
+It propagates automatically to:
+
+- **uvicorn** inside the `api` container — `docker compose` substitutes
+  it into the service `command` at parse time.
+- **nginx** — `nginx.conf.template` is rendered by the official image's
+  envsubst entrypoint into `/etc/nginx/conf.d/default.conf`, replacing
+  `${SERVER_PORT}` with the runtime value.
+- **Host port mapping** — the `ports:` declaration of the nginx service
+  uses the same variable, so the published port matches.
+- **API healthcheck** — substituted into the `wget` URL at parse time.
+
+To change the port:
+
+```bash
+# Edit the .env (single source of truth)
+sed -i '' 's/^SERVER_PORT=.*/SERVER_PORT=80/' .env   # macOS
+# sed -i  's/^SERVER_PORT=.*/SERVER_PORT=80/' .env   # Linux
+
+# Recreate so compose re-reads .env (restart alone is not enough)
+docker compose down
+docker compose up -d
+
+# Verify (no :80 because that is HTTP's default port)
+curl http://localhost/docs
+```
+
+No edits to `Dockerfile`, `nginx.conf.template` or `docker-compose.yml`
+are required — the whole stack reconfigures itself.
+
 ---
 
 ## Sending notifications to any recipient in any country

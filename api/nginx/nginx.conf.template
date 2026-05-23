@@ -1,0 +1,22 @@
+# Rendered by the official nginx image's entrypoint via envsubst:
+# `/etc/nginx/templates/default.conf.template` -> `/etc/nginx/conf.d/default.conf`.
+# Only ${SERVER_PORT} is substituted from the container env; the
+# `$proxy_add_x_forwarded_for` / `$host` references below are NGINX
+# internal variables (single `$`, no braces) and stay intact.
+
+upstream api_server {
+    server api:${SERVER_PORT};
+}
+
+server {
+    listen ${SERVER_PORT};
+    client_max_body_size 80M;
+
+    location / {
+        proxy_pass http://api_server;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+        server_tokens off;
+    }
+}
